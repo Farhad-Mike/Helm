@@ -1,1 +1,32 @@
+ArtifactHUB is the repository where you can find a lot of Helm charts and other packages for other tools
+
+>>helm create <chartName>               # Create a new chart
+>>helm repo add <setName> <url>         # Add repository and give him <setName>
+>>helm repo list                        # List all installed repositories
+>>helm repo update                      # Update all repositories. It's like apt update command
+>>helm search repo <package>            # Search all available packages in all localy installed repositories with the name <package>
+>>helm search repo <package> --versions # Show all versions of the <package>
+>>helm show chart bitnami/wordpress     # Show specific package
+>>helm show readme bitnami/wordpress    # Show exact the same as in on ArtifactHUB page
+>>helm show values bitnami/wordpress    # Show values like in the ArtifactHUB
+>>helm install <setName> <package>      # Download and install a Chart. Also it will show a little description about Chart
+>>helm install <setName> <package> --version=<version>  # Download and install a specific version of Chart
+>>helm install <setName> --set "<key>=<value>"          # Deploy with custom values
+>>helm install <setName> -f </varFile.yaml> <package>   # Deploy with custom values that get from file
+>>helm uninstall <chartName>            # Remove already installed helm package
+>>helm get values <chartName>           # Will show all values that provided by user
+>>helm get values <chartName> --all     # Will show all values that is used in Chart
+>>helm get values <chartName> --revision <int>  # Show what custom values used in Chart version <int>
+>>helm list                             # Show all installed Helm packages
+>>helm upgrade --reuse-values --values <varFile.yaml> <usedName> <chartName> [--version <version>]  # Upgrade values of deployed Chart.If you don't want upgrade to the latest version of package then write version of package that should used. "--reuse-values" is option used if you want commit old (already exist) custom values with new values.
+>>helm history <chartName>              # Will show historicaly when and how mane upgrades applied
+>>helm rollback <chartName> <revisionVer> # Rollback to old revision (version)
+
+
+After uninstall helm Chart. If you no need data of helm Chart that was created before. You should check pv,pvc in K8S cluster and if you not need it then just delete it. Also old pvc can working with old passwords that is not will work in future installation (if you don't set passwords manually) 
+
+Value files example: some-values.yaml
+key: value
+key2: value
+key3: someOtherKeys         # The someOtherKeys can be as secret of K8S
 
