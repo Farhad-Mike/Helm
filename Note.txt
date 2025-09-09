@@ -19,6 +19,10 @@ ArtifactHUB is the repository where you can find a lot of Helm charts and other 
 >>helm get values <chartName> --revision <int>  # Show what custom values used in Chart version <int>
 >>helm list                             # Show all installed Helm packages
 >>helm upgrade --reuse-values --values <varFile.yaml> <usedName> <chartName> [--version <version>]  # Upgrade values of deployed Chart.If you don't want upgrade to the latest version of package then write version of package that should used. "--reuse-values" is option used if you want commit old (already exist) custom values with new values.
+                                        Option --atomic         # Rollback if after (default 5m) upgrade not passed successfully
+                                        Option --clean-up-fail  # Remove all maping environments if upgrade not passed
+                                        Option --debug          # Enable debug mode during upgrade 
+                                        Option --timeout <int>m # Change default timeout for "--atomic" option
 >>helm history <chartName>              # Will show historicaly when and how mane upgrades applied
 >>helm rollback <chartName> <revisionVer> # Rollback to old revision (version)
 
