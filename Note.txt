@@ -9,7 +9,7 @@ ArtifactHUB is the repository where you can find a lot of Helm charts and other 
 >>helm show chart bitnami/wordpress     # Show specific package
 >>helm show readme bitnami/wordpress    # Show exact the same as in on ArtifactHUB page
 >>helm show values bitnami/wordpress    # Show values like in the ArtifactHUB
->>helm install <setName> <package>      # Download and install a Chart. Also it will show a little description about Chart
+>>helm install <setName> <package>      # Download and install a Chart. Also it will show a little description about Chart. 
 >>helm install <setName> <package> --version=<version>  # Download and install a specific version of Chart
 >>helm install <setName> --set "<key>=<value>"          # Deploy with custom values
 >>helm install <setName> -f </varFile.yaml> <package>   # Deploy with custom values that get from file
@@ -18,13 +18,15 @@ ArtifactHUB is the repository where you can find a lot of Helm charts and other 
 >>helm get values <chartName> --all     # Will show all values that is used in Chart
 >>helm get values <chartName> --revision <int>  # Show what custom values used in Chart version <int>
 >>helm list                             # Show all installed Helm packages
->>helm upgrade --reuse-values --values <varFile.yaml> <usedName> <chartName> [--version <version>]  # Upgrade values of deployed Chart.If you don't want upgrade to the latest version of package then write version of package that should used. "--reuse-values" is option used if you want commit old (already exist) custom values with new values.
+>>helm upgrade --reuse-values --values <varFile.yaml> <usedName> <package> [--version <version>]  # Upgrade values of deployed Chart.If you don't want upgrade to the latest version of package then write version of package that should used. "--reuse-values" is option used if you want commit old (already exist) custom values with new values.
                                         Option --atomic         # Rollback if after (default 5m) upgrade not passed successfully
                                         Option --clean-up-fail  # Remove all maping environments if upgrade not passed
                                         Option --debug          # Enable debug mode during upgrade 
                                         Option --timeout <int>m # Change default timeout for "--atomic" option
->>helm history <chartName>              # Will show historicaly when and how mane upgrades applied
+>>helm history <chartName>                # Will show historicaly when and how mane upgrades applied
 >>helm rollback <chartName> <revisionVer> # Rollback to old revision (version)
+>>helm template <package> [url]           # Show final version of files.yaml that it will look like if you apply a package. If you use custom helm chart located in localhost then you don't need [url]. It's the good command if you wnat check "Does your variable will applied in needed field (row)?"
+>>helm lint                               # Check a package for possible issues. It's need for custom charts
 
 
 After uninstall helm Chart. If you no need data of helm Chart that was created before. You should check pv,pvc in K8S cluster and if you not need it then just delete it. Also old pvc can working with old passwords that is not will work in future installation (if you don't set passwords manually) 
@@ -33,4 +35,67 @@ Value files example: some-values.yaml
 key: value
 key2: value
 key3: someOtherKeys         # The someOtherKeys can be as secret of K8S
+
+
+
+
+
+###### Create Custom Helm Chart #####
+
+CHART FILE TREE STRUCTURE
+
+Chart.yaml:             # A YAML file containing metadata about the chart
+  apiVersion:           # The chart API version (v1 or v2). For Helm 3, use v2
+  name:                 # The name of the chart 
+  version:              # The version of the chart (uses semantic versioning)
+  appVersion:           # The version of the application enclosed (not Helm itself). Example: if you look on dockerhub nginx version tag the same tag should be here. But if you use custom image you can use any appVesion as you want
+  description:          # A brief descrption of the chart 
+  type:                 # Type of chart (e.g., application or library)
+  keywords:             # A list of keywords representative of the project 
+  dependencies:         # A list of other charts that the current chart depends on. You can put here another chart and they will used also too
+
+values.yaml:            # A YAML file containing default configuration values for the chart. It's recommended to leverage the values.yaml file as much as possible to avoid hard-coding configuration into the chart
+README.md               # Provides a human-readable documentation file
+LICENSE                 # A plain text file containig the license for the chart (and chart applications, if relevant)
+.helmignore             # Used to ignore paths when packaging the chart (for example, local development files)
+charts/                 # Contains any chart dependencies (subharts). These dependencies should be informed in the Chart.yaml file, and will be downloaded and saved locally
+templates/              # This directory contains multiple files that are relevant for Helm projects, including the multiple K8S manifest templates that are rendered by Helm 
+  tests/                # Contains tests to be executed when running the helm test command
+  NOTES.txt             # It's contents are printed on the screen upon successful chart installation or upgrade 
+  _helpers.tpl          # Contains template helper functions, which can be used to reduce duplication. Files preceded with an underscore are not included in the final rendering from Helm 
+
+Comments in .yaml file that understand GO language:
+# Hey I am a comment                  # This YAML format comments will persist in helm template . result
+{{/* I am a comment also too */}}   # This GO format comments will not persist in helm template . result, but it will take empty row in result
+{{- /* I am a comment also too */}}   # This GO format comments will not persist in helm template . result, also will not take empty row in result
+
+
+
+
+
+##### VARIABLES IN TEMPLATES #####
+
+
+test: {{ .Values.test }}                                  # Simple use of variable
+image: "{{ .Values.image.name }}:{{ .Value.image.tag }}"  # If you need store result of key in quots
+test: {{ lower .Values.test }}                            # Make result of variable in lowercase
+test: {{ replace " " "-" .Values.test }}                  # In string .Values.test find " " (empty spaces) and replace them with "-" (dash) symbol
+test: {{ lower (replace " " "-" .Values.test) }}          # First will execute "replace" function and then execute "lower" function
+test: {{ replace " " "-" .Values.test | lower }}          # First will execute "replace" function and then execute "lower" function
+test: {{ lower .Values.test | replace " " "-" }}          # First will execute "lower" function and then execute "replace" function
+
+Conditions:                                               # If you will add dash "-" at begin of curly brackets the empty line will not persist
+{{ if eq .Values.name "farhad" }}
+user: farhad
+tel: 0559607843
+laptop: dell
+{{ else if eq .Values.name "sarkhan" }}
+user: sarkhan
+tel: 0518471744
+laptop: monoblock
+{{ else }}
+user: someone
+tel: 05XXXXXXXX
+laptop: XXX
+{{ end }}
 
