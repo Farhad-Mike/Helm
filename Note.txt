@@ -4,6 +4,7 @@ ArtifactHUB is the repository where you can find a lot of Helm charts and other 
 >>helm repo add <setName> <url>         # Add repository and give him <setName>
 >>helm repo list                        # List all installed repositories
 >>helm repo update                      # Update all repositories. It's like apt update command
+>>helm repo index ./                    # Generate an index file given a directory containing packaged charts
 >>helm search repo <package>            # Search all available packages in all localy installed repositories with the name <package>
 >>helm search repo <package> --versions # Show all versions of the <package>
 >>helm show chart bitnami/wordpress     # Show specific package
@@ -11,6 +12,7 @@ ArtifactHUB is the repository where you can find a lot of Helm charts and other 
 >>helm show values bitnami/wordpress    # Show values like in the ArtifactHUB
 >>helm install <setName> <package>      # Download and install a Chart. Also it will show a little description about Chart. 
 >>helm install <setName> <package> --version=<version>  # Download and install a specific version of Chart
+>>helm install <setName> <package.tgz>  # Deploy from .tgz file
 >>helm install <setName> --set "<key>=<value>"          # Deploy with custom values
 >>helm install <setName> -f </varFile.yaml> <package>   # Deploy with custom values that get from file
 >>helm uninstall <chartName>            # Remove already installed helm package
@@ -26,7 +28,9 @@ ArtifactHUB is the repository where you can find a lot of Helm charts and other 
 >>helm history <chartName>                # Will show historicaly when and how mane upgrades applied
 >>helm rollback <chartName> <revisionVer> # Rollback to old revision (version)
 >>helm template <package> [url]           # Show final version of files.yaml that it will look like if you apply a package. If you use custom helm chart located in localhost then you don't need [url]. It's the good command if you wnat check "Does your variable will applied in needed field (row)?"
+>>helm template <package> --debug         # Will show your incorrect YAML
 >>helm lint                               # Check a package for possible issues. It's need for custom charts
+>>helm package <chartName>                # Compress and archivate chartName in .tgz format. Used for public it or store locally
 
 
 After uninstall helm Chart. If you no need data of helm Chart that was created before. You should check pv,pvc in K8S cluster and if you not need it then just delete it. Also old pvc can working with old passwords that is not will work in future installation (if you don't set passwords manually) 
@@ -84,6 +88,8 @@ test: {{ lower (replace " " "-" .Values.test) }}          # First will execute "
 test: {{ replace " " "-" .Values.test | lower }}          # First will execute "replace" function and then execute "lower" function
 test: {{ lower .Values.test | replace " " "-" }}          # First will execute "lower" function and then execute "replace" function
 
+NOTE: {{ .Release.name }}   # It is the <setName> when you install a package. It is very important to know. You can avoid a lot of conflicts when deploy from Chart
+
 Conditions:                                               # If you will add dash "-" at begin of curly brackets the empty line will not persist
 {{ if eq .Values.name "farhad" }}
 user: farhad
@@ -99,3 +105,26 @@ tel: 05XXXXXXXX
 laptop: XXX
 {{ end }}
 
+NOTE: You can put all body of file in Conditions if you need apply it according conditions
+
+
+
+
+
+##### GO LANGUAGE FUNCTION IN TEMPLATES #####
+
+
+
+The list function:  # list Farhad Ayten Idris -> [Farhad, Ayten, Idris]
+The nindent function: # Add spaces. Always space adding start from the deep left side
+
+list:                                                         # Will create "list" field and every element of list applied in YAML format
+{{ list Farhad Ayten Idris | toYaml }}
+{{ list Farhad Ayten Idris | toYaml | nindent 2 }}            # nindent will add 2 spaces before every element of list
+list: {{ toYaml (list Farhad Ayten Idris) | nindent 2 }}
+
+Example (Result):
+list:
+-Farhad 
+-Ayten 
+-Idris
