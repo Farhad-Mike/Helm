@@ -115,6 +115,9 @@ NOTE: You can put all body of file in Conditions if you need apply it according 
 
 
 
+NOTE: All functions that can be used in helm you can find in official documentation 
+
+
 The list function:  # list Farhad Ayten Idris -> [Farhad, Ayten, Idris]
 The nindent function: # Add spaces. Always space adding start from the deep left side
 
@@ -128,3 +131,16 @@ list:
 -Farhad 
 -Ayten 
 -Idris
+
+
+
+The dict function:
+
+mydictionary: {{ dict "key" "value" "key2" "value2" "complexKey" (dict "key3" "value3") | toYaml | nindent 2 }}
+
+Example (Result):
+mydictionary:
+  key: value
+  key2: value2
+  complexKey: 
+    key3: value3
