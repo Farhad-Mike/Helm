@@ -70,7 +70,7 @@ templates/              # This directory contains multiple files that are releva
 
 Comments in .yaml file that understand GO language:
 # Hey I am a comment                  # This YAML format comments will persist in helm template . result
-{{/* I am a comment also too */}}   # This GO format comments will not persist in helm template . result, but it will take empty row in result
+{{/* I am a comment also too */}}     # This GO format comments will not persist in helm template . result, but it will take empty row in result
 {{- /* I am a comment also too */}}   # This GO format comments will not persist in helm template . result, also will not take empty row in result
 
 
@@ -107,6 +107,9 @@ laptop: XXX
 
 NOTE: You can put all body of file in Conditions if you need apply it according conditions
 
+Also you can write all conditions in one line:
+{{ if eq .Values.name "farhad" }} 2 {{ else }} 5 {{ end }}
+
 
 
 
@@ -116,6 +119,8 @@ NOTE: You can put all body of file in Conditions if you need apply it according 
 
 
 NOTE: All functions that can be used in helm you can find in official documentation 
+NOTE: In pipeline "|" {{ .Values.name | default "value"  }} the ".Values.name" will be added as last argument to any function. In this case as second argument
+NOTE: The dot "." it is Object. Этот объект присваивает себе в качестве свойств все переменные (как key, value) находящиеся в блоке кода из которого его вызывают. То есть если он будет находиться на глобальном уровне то его key, value будут default значение на основе документации. А если его вызвать из внутри 
 
 
 The list function:  # list Farhad Ayten Idris -> [Farhad, Ayten, Idris]
@@ -144,3 +149,72 @@ mydictionary:
   key2: value2
   complexKey: 
     key3: value3
+
+
+The trimAll, trimPrefix, trimSuffix function:
+
+trimAll "-" "-Hello-"     # Result "Hello". The function remove from begin and end of string
+trimPrefix "-" "-Hello"   # Result "Hello". The function remove from start of string
+trimSuffix "-" "Hello-"   # Result "Hello". The function remove from end of string
+
+
+The default function:
+
+default "foo" .Bar        # In the above, if .Bar evaluates to a non-empty value, it will be used. But if it is empty, foo will be returned instead.
+
+The range function:
+
+{{- range $idx, $elem := (.Values.users | default list) }}    # Start of range function. The function make loop according iterable object (in this case the .Value.user is a list). 
+name:     {{ $elem.name }}
+age:      {{ $elem.age }}
+phone:    {{ $elem.phone }}
+position: {{ $idx }}                                          # Show position of element in list. Starting at 0
+{{- end }}                                                    # End of range function.
+
+{{- range $key, $value := (.Values.users | default dict) }}   # In this case the .Value.user is an object with subobjects. The $key get user1 and user2 objects with properties.
+---                                                           # It is recommended add "---" for spleat .yaml file if you block the whole code in any function
+name:     {{ $value.name }}
+age:      {{ $value.age }}
+phone:    {{ $value.phone }}
+{{- end }}
+
+
+
+
+
+##### HELPERS.TPL #####
+
+_helpers.tpl:           # The file for storing reusable template definitions, often referred to as "named templates" or "partials".
+# The below strings define code for use it in other Charts. Next below you can watch example how use it in other Charts
+# {{- define "<charts.yaml file's 'name:' field>" -}}
+  {{- define "chartName.anyNewName" -}}
+  {{- printf "%s-%s" .Release.Name .Chart.Name | trunc 63 -}}       # The "trunc" function is limit the maximum simbols persist after generate completed. "%s-%s" is meaning with what symbol replace space (between .Release.Name and .Chart.Name) in result. 
+  {{- end -}}
+
+someChart.yaml:     # There is example how use defined code in Charts.
+  name: {{ include "chartName.newLabelName" . }}      # The dot "." meaning read absolutely from root.
+
+
+_helpers.tpl:                               The below code used for not repeate some part of codes in Charts.
+  {{- define "chartName.anyNewName" -}}
+  app: {{ .Chart.Name }}
+  release: {{ .Release.Name }}
+  {{- end -}}
+
+someChart.yaml:     # There is example how use defined code in Charts.
+  name: 
+    {{- include "chartName.newLabelName" . | nindent 4 }}     # The value of variable will pasted after 4 spaces. According your code you should use correct nindent <int>. If you will write variable on a new row then you should add "-" before "include" keyword
+
+
+_helpers.tpl:
+  {{- define "chartName.anyNewName" -}}
+  {{- $varName := printf "%s-%s" .Release.Name .Chart.Name }}   # Create variable
+  {{- if .Values.customName }}                                  # According condition do below code 
+  {{- $varName = "assignNewValue" }}                            # Change value of variable. The $varName persist in all block because you declare it in top level of main block. 
+  {{- end }}                                                    # Close condition
+  {{- $varName | trunc 63 -}}                                   # Use variable
+  {{- end -}}                                                   # Close "define"
+
+
+NOTE: $variables are persist only in block that are they located and in subblocks. They will not persist in block above if you didn't declare it before. Look comment above
+
