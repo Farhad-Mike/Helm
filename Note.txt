@@ -217,4 +217,4 @@ _helpers.tpl:
 
 
 NOTE: $variables are persist only in block that are they located and in subblocks. They will not persist in block above if you didn't declare it before. Look comment above
-
+Update
