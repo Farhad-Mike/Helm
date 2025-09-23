@@ -117,10 +117,13 @@ Also you can write all conditions in one line:
 ##### GO LANGUAGE FUNCTION IN TEMPLATES #####
 
 
-
+NOTE: DON'T FORGET CLOSE ALL FUNCTIONS AND BLOCKS WITH {{- end }}
 NOTE: All functions that can be used in helm you can find in official documentation 
 NOTE: In pipeline "|" {{ .Values.name | default "value"  }} the ".Values.name" will be added as last argument to any function. In this case as second argument
-NOTE: The dot "." it is Object. Этот объект присваивает себе в качестве свойств все переменные (как key, value) находящиеся в блоке кода из которого его вызывают. То есть если он будет находиться на глобальном уровне то его key, value будут default значение на основе документации. А если его вызвать из внутри 
+NOTE: The dot "." it is Object. Этот объект присваивает себе в качестве свойств все переменные (как key, value) находящиеся в блоке кода из которого его вызывают. То есть если он будет находиться на глобальном уровне то его key, value будут default значение на основе документации. А если его вызвать из нутри блока кода функций "with", "range" то все переменные блока кода будут в качестве свойств объекта dot ".". Also it is mean you can write code shortless, for Example: instead of write ".Values.secContext.enabled" you can write ".enabled".   
+NOTE: The "$" it is also an Object. В отличие от вышеупомянутого dot ".", "$" будет всегда иметь глобальные свойства вне зависимости от того из какого блока его вызывают
+NOTE: The only functions which has subblock limitation are "with" and "range"
+NOTE: As in all programming language variables "$myVar" declared in some blocks will be available only in that block and in his subblocks
 
 
 The list function:  # list Farhad Ayten Idris -> [Farhad, Ayten, Idris]
@@ -162,6 +165,7 @@ The default function:
 
 default "foo" .Bar        # In the above, if .Bar evaluates to a non-empty value, it will be used. But if it is empty, foo will be returned instead.
 
+
 The range function:
 
 {{- range $idx, $elem := (.Values.users | default list) }}    # Start of range function. The function make loop according iterable object (in this case the .Value.user is a list). 
@@ -179,14 +183,23 @@ phone:    {{ $value.phone }}
 {{- end }}
 
 
+The with function:
+{{- with .Values.users }}                                     # The real path to value is ".Values.users.farhad" but the function provide to you feature for write less. In block of the function you can write just ".farhad"
+
+
+The hasKey function:
+{{- hasKey $obj "$key" }}                                     # Return TRUE if the object "$obj" has "$key" propertie
+
+
 
 
 
 ##### HELPERS.TPL #####
 
-_helpers.tpl:           # The file for storing reusable template definitions, often referred to as "named templates" or "partials".
+
+_helpers.tpl:           # It is used for store blocks of codes that you can reuse as much as you want in Charts. Also it is used for make Validation Logics.
 # The below strings define code for use it in other Charts. Next below you can watch example how use it in other Charts
-# {{- define "<charts.yaml file's 'name:' field>" -}}
+# {{- define "<charts.yaml file's 'name:' field>" -}}               # Define is just defaine block of code that you can reuse
   {{- define "chartName.anyNewName" -}}
   {{- printf "%s-%s" .Release.Name .Chart.Name | trunc 63 -}}       # The "trunc" function is limit the maximum simbols persist after generate completed. "%s-%s" is meaning with what symbol replace space (between .Release.Name and .Chart.Name) in result. 
   {{- end -}}
@@ -217,4 +230,25 @@ _helpers.tpl:
 
 
 NOTE: $variables are persist only in block that are they located and in subblocks. They will not persist in block above if you didn't declare it before. Look comment above
+
+
+
+
+
+##### Appying Validation Functions in Templates #####
+
+
+The required function:
+{{- if and .Values.securityContext .Values.securityContext.enabled -}}      # If securityContext variable persist and has enabled: true
+{{- $_ := required "What print to user" .Values.securityContext.userid -}}  # Check if ".userid" variable not available then show string
+{{- $_ := required "What print to user" .Values.securityContext.usergrp -}} # Check if ".usergrp" variable not available then show string
+{{- end -}}
+# The reason why I declare variable $_. The $_ is asociated as trash variable. I put it in trash variable for not shoving result and not break estetik vision of template after it will generated.
+
+
+The fail function:
+{{- fail "string" -}}     # The fail function always return error and "string" as text.
+
+NOTE: In some times you need use result of function. For that you can use {{- . }} for return all properties that declared in function to the dot "." object.
+
 
