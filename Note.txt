@@ -252,3 +252,47 @@ The fail function:
 NOTE: In some times you need use result of function. For that you can use {{- . }} for return all properties that declared in function to the dot "." object.
 
 
+
+
+
+##### Working with Chart Dependencies #####
+
+
+>>helm dependency list <chartDir>     # Shows information about the installed dependencies for a specific chart 
+>>helm dependency update <chartDir>   # Update the Chart.lock file. Downloads and saves the dependencies tar files
+>>helm dependency build <chartDir>    # Download and saves the dependencies tar files. Fails if the informed version in the Chart.yaml is different from the Chart.lock file
+
+For add Dependencies to a Chart and combine it:
+Chart.yaml:
+  dependencies:
+    - name: postgresql              # Name of the Chart
+      version: 16.2.2               # There should be Chart version not app version
+      repository: '<https://url>'   # The url of repository. If you use localhost stored chart then you should not use "repository:" field
+After above you should run >>helm dependency update command
+
+For make apply main values from main Chart to dependencies Charts you should do next when declare variable in main values.yaml file:
+  <nameOfDependenciesChart>:
+    <variableOfDependenciesChart>:  <value>
+
+Using Global variables in Charts:   # The Global variables make be used in all subCharts and Charts. The Global variables will be available anywhere in Charts.
+  global:                           # Information about all available Global variables can be founded in ArtifactHUB in Chart's documentation
+    <key>: <value>                  # For use the variable {{ .Values.global.<key> }}
+
+You can use {{ include }} function in parentChart that will get block of code form subChart
+
+According condition off/on dependencies:
+Chart.yaml:
+  dependencies:
+    - name: postgresql              
+      version: 16.2.2               
+      repository: '<https://url>' 
+      condition: postgresql.enabled       # Enable or Disable dependency according (true or false). This value you should create manually in Values.yaml
+
+According tags off/on dependencies:
+Chart.yaml:
+  dependencies:
+    - name: postgresql              
+      version: 16.2.2               
+      repository: '<https://url>' 
+      tags:
+      - database                          # This value you should create manually in Values.yaml. It is look like you create custom tag "database" and mount it to one or a few dependencies and like switch (true or false) you can enable or disable the dependencies tag mounted on. You can create and mount as much tags as you want. If one of tags has "true" then dependency will applied
