@@ -296,3 +296,47 @@ Chart.yaml:
       repository: '<https://url>' 
       tags:
       - database                          # This value you should create manually in Values.yaml. It is look like you create custom tag "database" and mount it to one or a few dependencies and like switch (true or false) you can enable or disable the dependencies tag mounted on. You can create and mount as much tags as you want. If one of tags has "true" then dependency will applied
+
+
+
+
+
+##### Accessing Files in Helm Overview #####
+
+
+apiVersion: v1
+metadata:
+  name: {{ include "accessing-files.fullname" . }}
+data:
+  application.propersies: |-                            # The "|-" allow you write multi line expressions
+{{ .Files.Get "</path/to/file>" | indent <int> }}       # The specific funciton ".Files.Get" that import file. It is look like body of file putted here. Note you can't import templates files this way
+  some.information: |-
+{{ .Files.Get "</path/to/file>" | indent <int> }}
+
+
+
+apiVersion: v1
+metadata:
+  name: {{ include "accessing-files.fullname" . }}
+data:
+{{- range $path, $_ := .Files.Glob "</folder/*.format>" }}    # Use cycle if you have a lot of files that need import
+  {{ $path }}                                                 # Look at this point as Key. If you use {{ base $path }} function, then it will strip element and get only last piece. Example: form folder/some.txt only some.txt will will shown
+{{ $.Files.Get $path | indent 4 }}                            # Look at this point as Value
+{{- end }}
+
+
+
+apiVersion: v1
+metadata:
+  name: {{ include "accessing-files.fullname" . }}
+data:
+{{ (.Files.Glob "</folder/*.format>").AsConfig | indent 2 }}  # Like example above will import all files
+
+
+
+apiVersion: v1
+metadata:
+  name: {{ include "accessing-files.fullname" . }}
+type: Opaque
+data:
+{{ (.Files.Glob "</folder/*.format>").AsSecret | indent 2 }}  # Like example above will import all files. Is is useful for secrets
